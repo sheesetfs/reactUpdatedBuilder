@@ -64,6 +64,14 @@ else
             echo "Log file not found. Proceeding with environment checks and build."
             bash "$SCRIPT_DIR/check_env_and_build.sh"
         fi
+
+        # Check if the serve path is empty
+        if [ -z "$(ls -A "$SERVE_PATH")" ]; then
+            echo "Serve path is empty. Proceeding with build."
+            bash "$SCRIPT_DIR/check_env_and_build.sh"
+        else
+            echo "Serve path is not empty. No build needed."
+        fi
     fi
 fi
 
