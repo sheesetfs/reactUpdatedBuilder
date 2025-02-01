@@ -25,10 +25,13 @@ log_update() {
 cd "$REACT_APP_PATH" || exit
 
 echo "Installing dependencies as $REACT_APP_USER..."
-npm install
+npm install --force
+
+# Ensure react-scripts is executable
+chmod +x node_modules/.bin/react-scripts
 
 echo "Building the React app..."
-NODE_OPTIONS="$NODE_OPTIONS" npm run build
+NODE_ENV="$NODE_ENV" NODE_OPTIONS="$NODE_OPTIONS" npm run build
 
 if [ $? -eq 0 ]; then
     echo "Build successful. Deploying to Nginx..."
@@ -57,8 +60,8 @@ if [ $? -eq 0 ]; then
     sudo chown -R "$SERVE_USER":"$SERVE_USER" "$SERVE_PATH"
 
     # Set permissions for the build directory and files
-    find "$SERVE_PATH" -type d -exec chmod $SERVE_DIR_PERM {} \;
-    find "$SERVE_PATH" -type f -exec chmod $SERVE_FILE_PERM {} \;
+    sudo find "$SERVE_PATH" -type d -exec chmod $SERVE_DIR_PERM {} \;
+    sudo find "$SERVE_PATH" -type f -exec chmod $SERVE_FILE_PERM {} \;
 
     # Clean up build folder
     sudo -u "$REACT_APP_USER" rm -rf "$REACT_APP_PATH/build"
@@ -68,7 +71,7 @@ if [ $? -eq 0 ]; then
 
     # Retain only the last N backups
     echo "Retaining the last $RETAIN_OLD_BUILDS backups..."
-    ls -dt "${SERVE_PATH}_backup_"* | tail -n +$((RETAIN_OLD_BUILDS + 1)) | xargs sudo rm -rf
+    sudo ls -dt "${SERVE_PATH}_backup_"* | tail -n +$((RETAIN_OLD_BUILDS + 1)) | xargs sudo rm -rf
 else
     echo "Build failed!"
     log_update "build" "fail" "$COMMIT_HASH"
