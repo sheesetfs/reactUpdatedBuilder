@@ -28,6 +28,9 @@ if [ ! -d "$REACT_APP_PATH" ]; then
     echo "Cloning repository as $REACT_APP_USER using SSH key..."
     sudo -u "$REACT_APP_USER" GIT_SSH_COMMAND="$GIT_SSH_COMMAND" git clone -b "$GIT_BRANCH" "$GIT_REPO_SSH" "$REACT_APP_PATH"
     cd "$REACT_APP_PATH" || exit
+    log_update "git" "success" "initial_clone"
+    bash "$SCRIPT_DIR/check_env_and_build.sh"
+    exit 0
 else
     echo "Repository exists. Checking for updates..."
     cd "$REACT_APP_PATH" || exit
@@ -49,12 +52,17 @@ else
         echo "No new updates."
 
         # Check if the last build failed and retry if necessary
-        LAST_BUILD_STATUS=$(tail -n 1 "$LOG_FILE" | grep ',build,' | awk -F, '{print $4}')
-        LAST_BUILD_COMMIT=$(tail -n 1 "$LOG_FILE" | grep ',build,' | awk -F, '{print $3}')
+        if [ -f "$LOG_FILE" ]; then
+            LAST_BUILD_STATUS=$(tail -n 1 "$LOG_FILE" | grep ',build,' | awk -F, '{print $4}')
+            LAST_BUILD_COMMIT=$(tail -n 1 "$LOG_FILE" | grep ',build,' | awk -F, '{print $3}')
 
-        if [ "$LAST_BUILD_STATUS" == "fail" ] && [ "$LAST_BUILD_COMMIT" == "$LOCAL_COMMIT" ]; then
-            echo "Last build failed. Retrying build..."
-            bash "$SCRIPT_DIR/build.sh" "$LOCAL_COMMIT"
+            if [ "$LAST_BUILD_STATUS" == "fail" ] && [ "$LAST_BUILD_COMMIT" == "$LOCAL_COMMIT" ]; then
+                echo "Last build failed. Retrying build..."
+                bash "$SCRIPT_DIR/build.sh" "$LOCAL_COMMIT"
+            fi
+        else
+            echo "Log file not found. Proceeding with environment checks and build."
+            bash "$SCRIPT_DIR/check_env_and_build.sh"
         fi
     fi
 fi
