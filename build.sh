@@ -25,10 +25,10 @@ log_update() {
 cd "$REACT_APP_PATH" || exit
 
 echo "Installing dependencies as $REACT_APP_USER..."
-npm install --force
+npm install
 
 echo "Building the React app..."
-$NODE_ENV npm run build
+NODE_OPTIONS="$NODE_OPTIONS" npm run build
 
 if [ $? -eq 0 ]; then
     echo "Build successful. Deploying to Nginx..."
